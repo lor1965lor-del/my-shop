@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>행복축제</title>
+
+<style>
+  /* ===== 기본 설정 ===== */
+  body {
+    margin: 0;
+    font-family: "맑은 고딕", sans-serif;
+    background-color: #fff0fc;
+    color: #333333;
+    font-size: 20px;      /* 어르신을 위해 글씨를 크게 */
+    line-height: 1.7;
+  }
+
+  /* ===== 맨 위 (쇼핑몰 이름) ===== */
+  header {
+    background-color: #d4f0b0;
+    text-align: center;
+    padding: 30px 20px;
+  }
+  header h1 {
+    font-size: 48px;
+    margin: 0;
+    color: #4a7023;
+  }
+  header p {
+    font-size: 24px;
+    margin: 10px 0 0 0;
+  }
+
+  /* ===== 큰 배너 (노부부 사진) ===== */
+  .banner {
+    position: relative;      /* 글자를 사진 위에 올리기 위한 설정 */
+    text-align: center;
+  }
+  .banner img {
+    width: 100%;
+    height: 480px;
+    object-fit: cover;       /* 사진이 찌그러지지 않게 꽉 채움 */
+    display: block;
+  }
+  .banner-text {
+    position: absolute;      /* 사진 위에 글자를 겹쳐 놓음 */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+  }
+  .banner-text h2 {
+    font-size: 44px;
+    color: white;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);  /* 글자 잘 보이게 그림자 */
+    margin: 0 0 25px 0;
+  }
+
+  /* ===== 버튼 ===== */
+  button {
+    background-color: #8bc34a;
+    color: white;
+    font-size: 28px;
+    padding: 20px 40px;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+  }
+
+  /* ===== 상품 카드 ===== */
+  .products {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 30px;
+    padding: 50px 20px;
+  }
+  .card {
+    position: relative;   /* 베스트 배지를 사진 위에 올리기 위한 설정 */
+    background-color: white;
+    border: 3px solid #d4f0b0;
+    border-radius: 20px;
+    width: 300px;
+    text-align: center;
+    padding-bottom: 30px;
+    overflow: hidden;        /* 사진 모서리도 둥글게 */
+  }
+  .card img {
+    width: 100%;
+    height: 240px;
+    object-fit: cover;
+    background-color: #f2f2f2;   /* 사진이 아직 없을 때 회색 박스로 보임 */
+    display: block;
+  }
+  .name {
+    font-size: 26px;
+    font-weight: bold;
+    margin: 20px 0 10px 0;
+  }
+  .old-price {
+    color: #999999;
+    text-decoration: line-through;
+  }
+  .price {
+    font-size: 30px;
+    font-weight: bold;
+    color: #e53935;
+    margin-bottom: 20px;
+  }
+  .rate {
+    font-size: 40px;         /* 할인율을 가장 크게 */
+    font-weight: bold;
+    color: #e53935;
+    margin-right: 10px;
+  }
+  .best {
+    position: absolute;      /* 카드 왼쪽 위에 붙임 */
+    top: 0;
+    left: 0;
+    background-color: #e53935;
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    padding: 8px 22px;
+    border-bottom-right-radius: 20px;
+  }
+
+  /* ===== 왼쪽 카테고리 + 오른쪽 상품 ===== */
+  .main {
+    display: flex;
+    align-items: flex-start;   /* 카테고리를 맨 위에 붙임 */
+    gap: 30px;
+    padding: 50px 30px;
+  }
+  .categories {
+    flex: 0 0 240px;           /* 왼쪽 칸 너비 고정 */
+    text-align: left;
+    padding: 0;
+  }
+  .categories button {
+    display: block;            /* 버튼을 세로로 하나씩 */
+    width: 100%;
+    text-align: left;
+    background-color: white;
+    color: #4a7023;
+    border: 3px solid #8bc34a;
+    font-size: 24px;
+    padding: 15px 25px;
+    margin: 0 0 14px 0;
+  }
+  .categories button.on {      /* 지금 보고 있는 카테고리 */
+    background-color: #8bc34a;
+    color: white;
+  }
+  .categories .info {        /* 주문안내 / 고객센터 */
+    display: block;
+    font-size: 24px;
+    color: #4a7023;
+    text-decoration: none;
+    font-weight: bold;
+    padding: 12px 25px;
+  }
+  .categories .info:first-of-type {   /* 카테고리와 구분하는 선 */
+    margin-top: 25px;
+    padding-top: 25px;
+    border-top: 3px solid #d4f0b0;
+  }
+  .products {
+    flex: 1;                   /* 남은 자리를 상품이 차지 */
+    justify-content: flex-start;
+    padding: 0;
+  }
+
+  /* 화면이 좁으면(휴대폰) 카테고리가 상품 위로 올라갑니다 */
+  @media (max-width: 900px) {
+    .main {
+      display: block;
+      padding: 30px 20px;
+    }
+    .categories {
+      margin-bottom: 30px;
+    }
+    .products {
+      justify-content: center;
+    }
+  }
+
+  /* ===== 맨 아래 연락처 ===== */
+  footer {
+    background-color: #d4f0b0;
+    text-align: center;
+    padding: 40px 20px;
+    font-size: 22px;
+  }
+  .free-ship {
+    font-size: 30px;
+    font-weight: bold;
+    color: #4a7023;
+    background-color: white;
+    display: inline-block;
+    padding: 15px 35px;
+    border-radius: 15px;
+    margin: 0 0 20px 0;
+  }
+</style>
+</head>
+
+<body>
+
+  <!-- 맨 위: 쇼핑몰 이름 -->
+  <header>
+    <h1>🌿 행복축제</h1>
+    <p>어르신의 편안한 하루를 응원합니다</p>
+  </header>
+
+  <!-- 큰 배너: 노부부 사진 + 문구 + 버튼 -->
+  <div class="banner">
+    <img src="images/couple.jpg" alt="행복한 노부부">
+    <div class="banner-text">
+      <h2>오늘도 여유롭고 행복하게</h2>
+      <button onclick="showAlert()">상품 보러가기</button>
+    </div>
+  </div>
+
+  <!-- 사진 출처 (모두 무료 상업적 이용 가능)
+       cushion.jpg - Unsplash: unsplash.com/photos/9024c9b5e84b
+       bottle.jpg  - Unsplash: unsplash.com/photos/01e90cb509cc
+       blanket.jpg - Pexels: pexels.com/photo/5710112
+       couple.jpg  - Pexels: pexels.com/photo/5637842 -->
+
+
+  <!-- 왼쪽: 카테고리 / 오른쪽: 상품 -->
+  <div class="main">
+    <!-- 카테고리 버튼 -->
+    <div class="categories">
+      <button class="on" onclick="showCategory('all', this)">전체보기</button>
+      <button onclick="showCategory('health', this)">건강용품</button>
+      <button onclick="showCategory('bedding', this)">침구용품</button>
+      <button onclick="showCategory('kitchen', this)">주방용품</button>
+      <button onclick="showCategory('clothes', this)">의류잡화</button>
+
+      <!-- 안내 메뉴 -->
+      <a class="info" href="#" onclick="showAlert()">주문안내</a>
+      <a class="info" href="#" onclick="showAlert()">고객센터</a>
+    </div>
+    <!-- 상품 카드 6개 -->
+    <div class="products">
+
+      <div class="card" data-category="clothes">
+        <div class="best">베스트</div>
+        <img src="images/socks.jpg" alt="양말">
+        <div class="name">순모 미끄럼방지 양말</div>
+        <div class="old-price">18,000원</div>
+        <div class="price"><span class="rate">45%</span>9,900원</div>
+        <button onclick="showAlert()">담기</button>
+      </div>
+
+      <div class="card" data-category="kitchen">
+        <div class="best">베스트</div>
+        <img src="images/bottle.jpg" alt="보온병">
+        <div class="name">가벼운 휴대 보온병</div>
+        <div class="old-price">28,000원</div>
+        <div class="price"><span class="rate">43%</span>15,900원</div>
+        <button onclick="showAlert()">담기</button>
+      </div>
+
+      <div class="card" data-category="bedding">
+        <img src="images/cushion.jpg" alt="방석">
+        <div class="name">푹신한 허리 지지 방석</div>
+        <div class="old-price">35,000원</div>
+        <div class="price"><span class="rate">37%</span>22,000원</div>
+        <button onclick="showAlert()">담기</button>
+      </div>
+
+      <div class="card" data-category="health">
+        <img src="images/glass.jpg" alt="돋보기">
+        <div class="name">황금테 고급 돋보기</div>
+        <div class="old-price">30,000원</div>
+        <div class="price"><span class="rate">37%</span>19,000원</div>
+        <button onclick="showAlert()">담기</button>
+      </div>
+
+      <div class="card" data-category="health">
+        <img src="images/cane.jpg" alt="지팡이">
+        <div class="name">고급 원목 지팡이</div>
+        <div class="old-price">45,000원</div>
+        <div class="price"><span class="rate">36%</span>29,000원</div>
+        <button onclick="showAlert()">담기</button>
+      </div>
+
+      <div class="card" data-category="bedding">
+        <img src="images/blanket.jpg" alt="이동용 담요">
+        <div class="name">포근한 이동용 담요</div>
+        <div class="old-price">30,000원</div>
+        <div class="price"><span class="rate">33%</span>20,000원</div>
+        <button onclick="showAlert()">담기</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 맨 아래: 연락처 -->
+  <footer>
+    <p class="free-ship">🚚 5만원 이상 구매하시면 무료배송!</p>
+    <p>📞 전화 주문: 1588-0000 (오전 9시 ~ 오후 6시)</p>
+    <p>행복축제 | 서울시 행복구 축제로 1길</p>
+  </footer>
+
+<script>
+  // 버튼을 누르면 알림창이 뜹니다
+  function showAlert() {
+    alert("행복축제에 오신 것을 환영합니다! 😊");
+  }
+
+  // 카테고리 버튼을 누르면 그 상품만 보입니다
+  function showCategory(category, clickedButton) {
+    var cards = document.querySelectorAll(".card");
+    for (var i = 0; i < cards.length; i++) {
+      if (category === "all" || cards[i].getAttribute("data-category") === category) {
+        cards[i].style.display = "";        // 보이기
+      } else {
+        cards[i].style.display = "none";    // 숨기기
+      }
+    }
+
+    // 누른 버튼에만 색을 칠합니다
+    var buttons = document.querySelectorAll(".categories button");
+    for (var j = 0; j < buttons.length; j++) {
+      buttons[j].classList.remove("on");
+    }
+    clickedButton.classList.add("on");
+  }
+</script>
+
+</body>
+</html>
