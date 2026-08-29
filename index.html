@@ -5,11 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>행복축제</title>
 
+<!-- 부드러운 느낌의 한글 글씨체 (고운돋움) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
+
 <style>
   /* ===== 기본 설정 ===== */
   body {
     margin: 0;
-    font-family: "맑은 고딕", sans-serif;
+    font-family: "Gowun Dodum", "맑은 고딕", sans-serif;
     background-color: #fff0fc;
     color: #333333;
     font-size: 20px;      /* 어르신을 위해 글씨를 크게 */
@@ -66,6 +71,7 @@
     border: none;
     border-radius: 15px;
     cursor: pointer;
+    font-family: inherit;   /* 버튼도 같은 글씨체로 */
   }
 
   /* ===== 상품 카드 ===== */
@@ -186,6 +192,43 @@
     }
   }
 
+
+  /* ===== 쇼핑몰 소개 ===== */
+  .about {
+    background-color: white;
+    max-width: 1000px;
+    margin: 0 auto 50px auto;
+    padding: 45px 40px;
+    border: 3px solid #d4f0b0;
+    border-radius: 20px;
+    text-align: center;
+  }
+  .about h2 {
+    font-size: 34px;
+    color: #4a7023;
+    margin: 0 0 20px 0;
+  }
+  .about-main {                /* 소개글 */
+    font-size: 36px;
+    font-weight: bold;
+    color: #4a7023;
+    margin: 0 0 35px 0;
+  }
+  .notice {                    /* 이용 안내 */
+    text-align: left;
+    background-color: #f6fbef;
+    border-radius: 15px;
+    padding: 25px 30px;
+  }
+  .notice h3 {
+    font-size: 28px;
+    color: #4a7023;
+    margin: 0 0 15px 0;
+  }
+  .notice p {
+    font-size: 22px;
+    margin: 12px 0;
+  }
   /* ===== 맨 아래 연락처 ===== */
   footer {
     background-color: #d4f0b0;
@@ -299,6 +342,21 @@
 
     </div>
   </div>
+
+  <!-- 쇼핑몰 소개 -->
+  <section class="about">
+    <h2>쇼핑몰 소개</h2>
+    <p class="about-main">좋은 상품만 판매합니다</p>
+
+    <div class="notice">
+      <h3>이용 안내</h3>
+      <p>✅ 전화 한 통이면 주문이 끝납니다. 1588-0000 (오전 9시 ~ 오후 6시)</p>
+      <p>✅ 주문하신 상품은 2~3일 안에 댁 앞까지 보내드립니다.</p>
+      <p>✅ 5만원 이상 구매하시면 배송비를 받지 않습니다.</p>
+      <p>✅ 물건이 마음에 들지 않으면 7일 안에 바꾸거나 돌려드립니다.</p>
+      <p>✅ 궁금한 점은 언제든지 전화 주십시오. 천천히 알려드립니다.</p>
+    </div>
+  </section>
 
   <!-- 맨 아래: 연락처 -->
   <footer>
