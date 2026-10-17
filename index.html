@@ -281,19 +281,38 @@
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 20;
   }
-  .cart-box {
+  .cart-box {                  /* 화면 오른쪽에 위아래로 꽉 차게 */
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 700px;
+    max-width: 100%;           /* 휴대폰에서는 화면 전체 */
     background-color: white;
-    max-width: 600px;
-    max-height: 85vh;
     overflow-y: auto;          /* 상품이 많으면 안에서 스크롤 */
-    margin: 5vh auto;
-    padding: 30px;
-    border-radius: 20px;
+    padding: 40px 35px;
+    border-radius: 25px 0 0 25px;
     box-sizing: border-box;
-    width: calc(100% - 32px);
+    box-shadow: -6px 0 20px rgba(0, 0, 0, 0.3);
+    animation: slide-in 0.3s ease-out;   /* 오른쪽에서 스르륵 나옴 */
+  }
+  @media (max-width: 600px) {  /* 휴대폰에서는 사진을 조금 작게 */
+    .cart-box {
+      padding: 30px 16px;
+      border-radius: 0;
+    }
+    .cart-item img {
+      width: 80px;
+      height: 80px;
+      flex: 0 0 80px;
+    }
+  }
+  @keyframes slide-in {
+    from { transform: translateX(100%); }
+    to   { transform: translateX(0); }
   }
   .cart-box h2 {
-    font-size: 34px;
+    font-size: 40px;
     color: #4a7023;
     margin: 0 0 20px 0;
   }
@@ -312,30 +331,30 @@
     gap: 15px;
   }
   .cart-item img {
-    width: 90px;
-    height: 90px;
+    width: 120px;
+    height: 120px;
     object-fit: cover;
     border-radius: 12px;
     background-color: #f2f2f2;
-    flex: 0 0 90px;
+    flex: 0 0 120px;
   }
   .cart-item .item-name {
-    font-size: 24px;
+    font-size: 28px;
     font-weight: bold;
   }
-  .cart-item button {          /* - + 삭제 버튼 */
-    font-size: 24px;
-    padding: 8px 18px;
+  .cart-item button {          /* - + 빼기 버튼 */
+    font-size: 26px;
+    padding: 10px 22px;
   }
   .cart-item .qty {
-    font-size: 26px;
-    min-width: 40px;
+    font-size: 30px;
+    min-width: 50px;
     text-align: center;
   }
   .cart-item .item-price {     /* 이름과 같은 줄 오른쪽 끝 */
     margin-left: auto;
     white-space: nowrap;
-    font-size: 24px;
+    font-size: 28px;
     font-weight: bold;
     color: #e53935;
   }
@@ -350,13 +369,13 @@
     padding: 30px 0;
   }
   .cart-total {
-    font-size: 30px;
+    font-size: 36px;
     font-weight: bold;
     text-align: right;
     margin: 20px 0 5px 0;
   }
   .cart-ship {
-    font-size: 22px;
+    font-size: 26px;
     text-align: right;
     color: #4a7023;
     margin: 0 0 25px 0;
