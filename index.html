@@ -454,6 +454,10 @@
   .signup-box select {
     background-color: white;
   }
+  .signup-box input::placeholder {   /* 입력칸 안 안내 문구 */
+    color: #8a8a8a;
+    font-size: 22px;
+  }
   .signup-box label {
     display: block;
     font-size: 26px;
@@ -675,14 +679,14 @@
       <p class="signup-intro">🌿 행복축제는 좋은 상품만 골라 어르신의 편안한 하루를 응원합니다</p>
       <form onsubmit="signUp(event)" novalidate>
         <label for="signup-email">이메일</label>
-        <input type="email" id="signup-email" placeholder="예) hong@naver.com" autocomplete="email">
+        <input type="email" id="signup-email" placeholder="이메일 주소 (예: hong@naver.com)" autocomplete="email">
 
         <label for="signup-password">비밀번호</label>
-        <input type="password" id="signup-password" autocomplete="new-password">
+        <input type="password" id="signup-password" placeholder="6자 이상 입력" autocomplete="new-password">
         <p class="hint">6자 이상 입력해 주세요</p>
 
         <label for="signup-birth">출생년도</label>
-        <input type="text" id="signup-birth" inputmode="numeric" maxlength="4" placeholder="예) 1955" autocomplete="bday-year">
+        <input type="text" id="signup-birth" inputmode="numeric" maxlength="4" placeholder="태어난 해 4자리 (예: 1955)" autocomplete="bday-year">
         <p class="hint">태어난 해를 숫자 4자리로 입력해 주세요</p>
 
         <!-- 보호자 정보 (원하는 분만) -->
@@ -690,7 +694,7 @@
         <div class="guardian" id="guardian">
           <label for="guardian-relation">보호자와의 관계</label>
           <select id="guardian-relation">
-            <option value="">골라 주세요</option>
+            <option value="">관계를 골라 주세요</option>
             <option value="자녀">자녀</option>
             <option value="배우자">배우자</option>
             <option value="손자·손녀">손자·손녀</option>
@@ -699,7 +703,7 @@
           </select>
 
           <label for="guardian-phone">보호자 전화번호</label>
-          <input type="tel" id="guardian-phone" inputmode="numeric" placeholder="예) 010-1234-5678" autocomplete="off">
+          <input type="tel" id="guardian-phone" inputmode="numeric" placeholder="보호자 번호 (예: 010-1234-5678)" autocomplete="off">
         </div>
 
         <p class="signup-msg" id="signup-msg"></p>
