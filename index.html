@@ -740,19 +740,12 @@
     padding: 25px 20px;
     text-align: center;
   }
-  .signup-box label {
-    color: #4a7023;
-  }
   .signup-intro {              /* 가게 소개 한 줄 */
     font-size: 24px;
     font-weight: bold;
     color: #4a7023;
     text-align: center;
     margin: -10px 0 28px 0;
-  }
-  .signup-box input,
-  .signup-box select {
-    background-color: white;
   }
   .signup-box input::placeholder {   /* 입력칸 안 안내 문구 */
     color: #8a8a8a;
@@ -762,11 +755,13 @@
     display: block;
     font-size: 26px;
     font-weight: bold;
+    color: #4a7023;
     margin: 0 0 8px 0;
   }
   .signup-box input,
   .signup-box select {
     display: block;
+    background-color: white;
     width: 100%;
     box-sizing: border-box;
     font-size: 26px;
@@ -835,6 +830,28 @@
     color: #4a7023;
     border: 3px solid #8bc34a;
   }
+
+  /* ===== 로그인 (창 모양은 회원가입과 같은 스타일을 씁니다) ===== */
+  .switch-link {               /* 로그인 ↔ 회원가입 바꾸기 */
+    font-size: 22px;
+    text-align: center;
+    margin: 25px 0 0 0;
+  }
+  .switch-link a {
+    color: #4a7023;
+    font-weight: bold;
+  }
+  .nav-group {                 /* 메뉴줄의 버튼 묶음 */
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .nav-user {                  /* 로그인한 분 이메일 */
+    font-size: 22px;
+    color: #f5f5f7;
+    word-break: break-all;
+  }
 </style>
 </head>
 
@@ -844,7 +861,16 @@
   <section class="hero" id="hero">
     <nav class="hero-nav">
       <p class="logo">🌿 행복축제</p>
-      <button class="signup-open" onclick="openSignup()">회원가입</button>
+      <!-- 로그인 전 -->
+      <div class="nav-group" id="nav-guest">
+        <button class="signup-open" onclick="openLogin()">로그인</button>
+        <button class="signup-open" onclick="openSignup()">회원가입</button>
+      </div>
+      <!-- 로그인 후 -->
+      <div class="nav-group" id="nav-member" style="display: none">
+        <span class="nav-user" id="nav-user"></span>
+        <button class="signup-open" onclick="logOut()">로그아웃</button>
+      </div>
     </nav>
 
     <div class="hero-stage">
@@ -1048,6 +1074,30 @@
           <button type="button" class="close" onclick="closeSignup()">닫기</button>
         </div>
       </form>
+      <p class="switch-link">이미 회원이신가요? <a href="#" onclick="closeSignup(); openLogin(); return false;">로그인</a></p>
+    </div>
+  </div>
+
+  <!-- 로그인 창 (버튼을 누르면 나타남) -->
+  <div class="signup-bg" id="login-bg" onclick="if (event.target === this) closeLogin()">
+    <div class="signup-box">
+      <h2>로그인</h2>
+      <p class="signup-intro">🌿 행복축제에 다시 오신 것을 환영합니다</p>
+      <form onsubmit="logIn(event)" novalidate>
+        <label for="login-email">이메일</label>
+        <input type="email" id="login-email" placeholder="가입한 이메일 주소" autocomplete="email">
+
+        <label for="login-password">비밀번호</label>
+        <input type="password" id="login-password" placeholder="비밀번호 입력" autocomplete="current-password">
+
+        <p class="signup-msg" id="login-msg"></p>
+
+        <div class="signup-buttons">
+          <button type="submit" id="login-button">로그인</button>
+          <button type="button" class="close" onclick="closeLogin()">닫기</button>
+        </div>
+      </form>
+      <p class="switch-link">아직 회원이 아니신가요? <a href="#" onclick="closeLogin(); openSignup(); return false;">회원가입</a></p>
     </div>
   </div>
 
@@ -1333,16 +1383,28 @@
   }
 
   // 안내 문구 보여주기 (kind: "ok" 또는 "error")
-  function showSignupMsg(text, kind) {
-    var msg = document.getElementById("signup-msg");
+  function showMsg(id, text, kind) {
+    var msg = document.getElementById(id);
     msg.textContent = text;
     msg.className = "signup-msg " + kind;
   }
 
-  // Supabase가 알려준 오류를 한국어로 바꿉니다
+  function showSignupMsg(text, kind) {
+    showMsg("signup-msg", text, kind);
+  }
+
+  // Supabase가 알려준 오류를 한국어로 바꿉니다 (가입·로그인 함께 사용)
   function koreanError(error) {
     var code = error.code || "";
     var text = (error.message || "").toLowerCase();
+
+    // 로그인 정보가 틀림 (아래 "invalid" 검사보다 먼저 확인해야 합니다)
+    if (code === "invalid_credentials" || text.indexOf("invalid login credentials") !== -1) {
+      return "이메일 또는 비밀번호가 맞지 않습니다. 다시 확인해 주세요.";
+    }
+    if (code === "email_not_confirmed") {
+      return "이메일 확인이 아직 끝나지 않았습니다. 받은 메일을 확인해 주세요.";
+    }
 
     if (code === "user_already_exists" || code === "email_exists" || text.indexOf("already registered") !== -1) {
       return "이미 가입된 이메일입니다. 다른 이메일을 입력해 주세요.";
@@ -1362,7 +1424,7 @@
     if (text.indexOf("fetch") !== -1 || text.indexOf("network") !== -1) {
       return "인터넷 연결을 확인해 주세요.";
     }
-    return "가입하지 못했습니다. 잠시 후 다시 해 주세요. (" + error.message + ")";
+    return "처리하지 못했습니다. 잠시 후 다시 해 주세요. (" + error.message + ")";
   }
 
   async function signUp(event) {
@@ -1454,6 +1516,80 @@
 
     button.disabled = false;
     button.textContent = "가족이 되기";
+  }
+
+  // ===== 로그인 =====
+  function openLogin() {
+    document.getElementById("login-bg").style.display = "block";
+    document.getElementById("login-email").focus();
+  }
+
+  function closeLogin() {
+    document.getElementById("login-bg").style.display = "none";
+  }
+
+  async function logIn(event) {
+    event.preventDefault();   // 화면이 새로고침되지 않게
+
+    var email = document.getElementById("login-email").value.trim();
+    var password = document.getElementById("login-password").value;
+
+    if (email === "") {
+      showMsg("login-msg", "이메일을 입력해 주세요.", "error");
+      return;
+    }
+    if (email.indexOf("@") === -1 || email.indexOf(".") === -1) {
+      showMsg("login-msg", "이메일 주소가 올바르지 않습니다. 예) hong@naver.com", "error");
+      return;
+    }
+    if (password === "") {
+      showMsg("login-msg", "비밀번호를 입력해 주세요.", "error");
+      return;
+    }
+    if (!db) {
+      showMsg("login-msg", "로그인 서버에 연결하지 못했습니다. 인터넷 연결을 확인해 주세요.", "error");
+      return;
+    }
+
+    var button = document.getElementById("login-button");
+    button.disabled = true;
+    button.textContent = "로그인 중...";
+
+    try {
+      var result = await db.auth.signInWithPassword({ email: email, password: password });
+      if (result.error) {
+        showMsg("login-msg", koreanError(result.error), "error");
+      } else {
+        showMsg("login-msg", "로그인되었습니다", "ok");
+        document.getElementById("login-password").value = "";
+      }
+    } catch (e) {
+      showMsg("login-msg", koreanError(e), "error");
+    }
+
+    button.disabled = false;
+    button.textContent = "로그인";
+  }
+
+  async function logOut() {
+    if (db) {
+      await db.auth.signOut();
+    }
+  }
+
+  // 로그인 상태에 따라 메뉴줄 바꾸기 (새로고침해도 로그인은 유지됩니다)
+  function updateNav(session) {
+    var loggedIn = !!(session && session.user);
+    document.getElementById("nav-guest").style.display = loggedIn ? "none" : "flex";
+    document.getElementById("nav-member").style.display = loggedIn ? "flex" : "none";
+    document.getElementById("nav-user").textContent = loggedIn ? session.user.email + " 님" : "";
+  }
+
+  if (db) {
+    // 처음 열 때, 로그인·가입·로그아웃할 때마다 자동으로 불립니다
+    db.auth.onAuthStateChange(function (event, session) {
+      updateNav(session);
+    });
   }
 </script>
 
