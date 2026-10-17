@@ -1586,26 +1586,34 @@
   }
 
   // 로그인 상태에 따라 메뉴줄 바꾸기 (새로고침해도 로그인은 유지됩니다)
-  function updateNav(session) {
-    var loggedIn = !!(session && session.user);
+  function updateNav(user) {
+    var loggedIn = !!user;
     document.getElementById("nav-guest").style.display = loggedIn ? "none" : "flex";
     document.getElementById("nav-member").style.display = loggedIn ? "flex" : "none";
-    document.getElementById("nav-user").textContent = loggedIn ? userName(session.user) + "님 환영합니다 😊" : "";
+    document.getElementById("nav-user").textContent = loggedIn ? userName(user) + "님 환영합니다 😊" : "";
   }
 
-  // 가입할 때 넣은 이름 (이름 없이 예전에 가입한 분은 이메일 @ 앞부분)
+  // 가입할 때 넣은 이름만 씁니다 (이름이 없으면 "회원")
   function userName(user) {
     var info = user.user_metadata || {};
-    if (info.name) {
-      return info.name;
+    return info.name ? info.name : "회원";
+  }
+
+  // 저장된 로그인 정보는 예전 것일 수 있어서, 서버에서 최신 이름을 다시 받아옵니다
+  async function refreshUser() {
+    var result = await db.auth.getUser();
+    if (result.data && result.data.user) {
+      updateNav(result.data.user);
     }
-    return (user.email || "").split("@")[0];
   }
 
   if (db) {
     // 처음 열 때, 로그인·가입·로그아웃할 때마다 자동으로 불립니다
     db.auth.onAuthStateChange(function (event, session) {
-      updateNav(session);
+      updateNav(session ? session.user : null);
+      if (session) {
+        setTimeout(refreshUser, 0);   // 이 안에서 바로 기다리면 멈출 수 있어서 살짝 뒤에 실행
+      }
     });
   }
 </script>
