@@ -1039,6 +1039,9 @@
       <h2>회원가입</h2>
       <p class="signup-intro">🌿 행복축제는 좋은 상품만 골라 어르신의 편안한 하루를 응원합니다</p>
       <form onsubmit="signUp(event)" novalidate>
+        <label for="signup-name">이름</label>
+        <input type="text" id="signup-name" maxlength="20" placeholder="불러드릴 이름 (예: 홍길동)" autocomplete="name">
+
         <label for="signup-email">이메일</label>
         <input type="email" id="signup-email" placeholder="이메일 주소 (예: hong@naver.com)" autocomplete="email">
 
@@ -1430,10 +1433,15 @@
   async function signUp(event) {
     event.preventDefault();   // 화면이 새로고침되지 않게
 
+    var name = document.getElementById("signup-name").value.trim();
     var email = document.getElementById("signup-email").value.trim();
     var password = document.getElementById("signup-password").value;
 
     // 보내기 전에 먼저 확인
+    if (name === "") {
+      showSignupMsg("이름을 입력해 주세요.", "error");
+      return;
+    }
     if (email === "") {
       showSignupMsg("이메일을 입력해 주세요.", "error");
       return;
@@ -1484,7 +1492,7 @@
       return;
     }
 
-    var userInfo = { birth_year: birthYear };
+    var userInfo = { name: name, birth_year: birthYear };
     if (relation !== "") {
       userInfo.guardian_relation = relation;
       userInfo.guardian_phone = phoneDigits;
@@ -1502,7 +1510,7 @@
       var result = await db.auth.signUp({
         email: email,
         password: password,
-        options: { data: userInfo }   // 회원 정보에 출생년도(+보호자 정보) 함께 저장
+        options: { data: userInfo }   // 회원 정보에 이름·출생년도(+보호자 정보) 함께 저장
       });
       if (result.error) {
         showSignupMsg(koreanError(result.error), "error");
@@ -1582,7 +1590,16 @@
     var loggedIn = !!(session && session.user);
     document.getElementById("nav-guest").style.display = loggedIn ? "none" : "flex";
     document.getElementById("nav-member").style.display = loggedIn ? "flex" : "none";
-    document.getElementById("nav-user").textContent = loggedIn ? session.user.email + " 님" : "";
+    document.getElementById("nav-user").textContent = loggedIn ? userName(session.user) + "님 환영합니다 😊" : "";
+  }
+
+  // 가입할 때 넣은 이름 (이름 없이 예전에 가입한 분은 이메일 @ 앞부분)
+  function userName(user) {
+    var info = user.user_metadata || {};
+    if (info.name) {
+      return info.name;
+    }
+    return (user.email || "").split("@")[0];
   }
 
   if (db) {
