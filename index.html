@@ -1169,8 +1169,10 @@
   }
 
   // ===== 장바구니 =====
-  // 담은 상품 목록: [{ name: "상품 이름", price: 9900, qty: 1 }, ...]
+  // 담은 상품 목록: [{ product_id: 1, name: "상품 이름", price: 9900, img: "images/..", qty: 1 }, ...]
+  // 로그인한 회원: Supabase(cart_items)에 저장 / 손님: 이 브라우저(localStorage)에 저장
   var cart = [];
+  var cartUser = null;   // 로그인한 회원 번호 (손님이면 null)
 
   // 예전에 담아둔 상품이 있으면 불러옵니다 (새로고침해도 남아 있게)
   try {
@@ -1197,10 +1199,140 @@
   }
   cart = merged;
 
+  // 손님 장바구니는 이 브라우저에 저장 (회원은 Supabase에 저장하므로 여기선 안 함)
   function saveCart() {
+    if (cartUser) {
+      return;
+    }
     try {
       localStorage.setItem("cart", JSON.stringify(cart));
     } catch (e) {}
+  }
+
+  // 상품 번호가 없는 상품(예전에 담은 것 등)은 이름으로 Supabase에서 찾아 채웁니다
+  async function fillProductIds(items) {
+    var missing = items.filter(function (item) { return !item.product_id; });
+    if (missing.length === 0) {
+      return;
+    }
+    var result = await db.from("products").select("id, name");
+    if (result.error || !result.data) {
+      return;
+    }
+    for (var i = 0; i < missing.length; i++) {
+      for (var j = 0; j < result.data.length; j++) {
+        if (result.data[j].name === missing[i].name) {
+          missing[i].product_id = result.data[j].id;
+        }
+      }
+    }
+  }
+
+  // 회원 장바구니: 상품 한 줄을 Supabase에 저장 (있으면 개수만 바꿈)
+  async function saveItemToServer(item) {
+    if (!cartUser || !db) {
+      return;
+    }
+    try {
+      await fillProductIds([item]);
+      if (!item.product_id) {
+        return;
+      }
+      var result = await db.from("cart_items").upsert(
+        { user_id: cartUser, product_id: item.product_id, qty: item.qty },
+        { onConflict: "user_id,product_id" }
+      );
+      if (result.error) {
+        console.warn("장바구니 저장 실패", result.error);
+      }
+    } catch (e) {
+      console.warn("장바구니 저장 실패", e);
+    }
+  }
+
+  // 회원 장바구니: 상품 한 줄을 Supabase에서 지움
+  async function deleteItemFromServer(item) {
+    if (!cartUser || !db || !item.product_id) {
+      return;
+    }
+    try {
+      var result = await db.from("cart_items").delete().eq("product_id", item.product_id);
+      if (result.error) {
+        console.warn("장바구니 삭제 실패", result.error);
+      }
+    } catch (e) {
+      console.warn("장바구니 삭제 실패", e);
+    }
+  }
+
+  // 로그인하면: Supabase의 회원 장바구니를 불러오고, 손님일 때 담은 상품을 합칩니다
+  async function loadServerCart() {
+    var result = await db.from("cart_items")
+      .select("qty, product_id, products(name, price, image)")
+      .order("created_at");
+    if (result.error || !result.data) {
+      console.warn("장바구니 불러오기 실패", result.error);
+      return;
+    }
+
+    var serverCart = [];
+    for (var i = 0; i < result.data.length; i++) {
+      var row = result.data[i];
+      if (!row.products) {
+        continue;   // 없어진 상품
+      }
+      serverCart.push({
+        product_id: row.product_id,
+        name: row.products.name,
+        price: row.products.price,   // 가격은 항상 최신 상품 가격으로
+        img: row.products.image,
+        qty: row.qty
+      });
+    }
+
+    // 손님일 때 담아둔 상품 합치기
+    var guestCart = cart;
+    await fillProductIds(guestCart);
+    var changed = [];
+    for (var g = 0; g < guestCart.length; g++) {
+      if (!guestCart[g].product_id) {
+        continue;
+      }
+      var same = null;
+      for (var s = 0; s < serverCart.length; s++) {
+        if (serverCart[s].product_id === guestCart[g].product_id) {
+          same = serverCart[s];
+        }
+      }
+      if (same) {
+        same.qty = Math.min(99, same.qty + guestCart[g].qty);
+        changed.push(same);
+      } else {
+        serverCart.push(guestCart[g]);
+        changed.push(guestCart[g]);
+      }
+    }
+
+    cart = serverCart;
+    drawCart();
+    for (var c = 0; c < changed.length; c++) {
+      await saveItemToServer(changed[c]);
+    }
+
+    // 합쳤으니 이 브라우저의 손님 장바구니는 비웁니다
+    try {
+      localStorage.removeItem("cart");
+    } catch (e) {}
+  }
+
+  // 로그아웃하면: 다음 사람이 보지 않도록 화면의 장바구니를 비웁니다
+  function clearCartOnLogout() {
+    cartUser = null;
+    cart = [];
+    try {
+      localStorage.removeItem("cart");
+    } catch (e) {}
+    drawCart();
   }
 
   // 숫자를 "9,900원" 모양으로 바꿉니다
@@ -1215,19 +1347,25 @@
     var priceText = card.querySelector(".price").lastChild.textContent;   // 예: "9,900원"
     var price = parseInt(priceText.replace(/[^0-9]/g, ""), 10);
     var img = card.querySelector("img").getAttribute("src");             // 예: "images/socks.jpg"
+    var productId = parseInt(card.getAttribute("data-id"), 10) || null;  // Supabase 상품 번호
 
-    var found = false;
+    var item = null;
     for (var i = 0; i < cart.length; i++) {
       if (cart[i].name === name) {
-        cart[i].qty += 1;       // 이미 담긴 상품이면 줄을 늘리지 않고 개수만 늘림
-        found = true;
+        item = cart[i];
+        item.qty = Math.min(99, item.qty + 1);   // 이미 담긴 상품이면 줄을 늘리지 않고 개수만 늘림
         break;
       }
     }
-    if (!found) {
-      cart.push({ name: name, price: price, img: img, qty: 1 });
+    if (!item) {
+      item = { product_id: productId, name: name, price: price, img: img, qty: 1 };
+      cart.push(item);
+    }
+    if (!item.product_id) {
+      item.product_id = productId;
     }
     saveCart();
+    saveItemToServer(item);
     drawCart();
 
     // 담았다는 표시를 잠깐 보여줍니다
@@ -1241,16 +1379,21 @@
 
   // 개수 바꾸기 (+1 또는 -1)
   function changeQty(index, amount) {
-    cart[index].qty += amount;
-    if (cart[index].qty < 1) {
+    var item = cart[index];
+    item.qty = Math.min(99, item.qty + amount);
+    if (item.qty < 1) {
       cart.splice(index, 1);     // 0개가 되면 빼기
+      deleteItemFromServer(item);
+    } else {
+      saveItemToServer(item);
     }
     saveCart();
     drawCart();
   }
 
   function removeItem(index) {
-    cart.splice(index, 1);
+    var item = cart.splice(index, 1)[0];
+    deleteItemFromServer(item);
     saveCart();
     drawCart();
   }
@@ -1456,6 +1599,7 @@
     var card = document.createElement("div");
     card.className = "card";
     card.setAttribute("data-category", p.category);
+    card.setAttribute("data-id", p.id);   // 장바구니를 Supabase에 저장할 때 쓰는 상품 번호
 
     if (p.is_best) {
       var best = document.createElement("div");
@@ -1775,6 +1919,14 @@
       updateNav(session ? session.user : null);
       if (session) {
         setTimeout(refreshUser, 0);   // 이 안에서 바로 기다리면 멈출 수 있어서 살짝 뒤에 실행
+
+        // 처음 로그인했을 때 한 번만 회원 장바구니 불러오기
+        if (cartUser !== session.user.id) {
+          cartUser = session.user.id;
+          setTimeout(loadServerCart, 0);
+        }
+      } else if (cartUser) {
+        clearCartOnLogout();
       }
     });
   }
