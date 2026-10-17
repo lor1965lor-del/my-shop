@@ -636,6 +636,10 @@
         <input type="password" id="signup-password" autocomplete="new-password">
         <p class="hint">6자 이상 입력해 주세요</p>
 
+        <label for="signup-birth">출생년도</label>
+        <input type="text" id="signup-birth" inputmode="numeric" maxlength="4" placeholder="예) 1955" autocomplete="bday-year">
+        <p class="hint">태어난 해를 숫자 4자리로 입력해 주세요</p>
+
         <p class="signup-msg" id="signup-msg"></p>
 
         <div class="signup-buttons">
@@ -901,6 +905,22 @@
       showSignupMsg("비밀번호는 6자 이상이어야 합니다.", "error");
       return;
     }
+
+    var birthText = document.getElementById("signup-birth").value.trim();
+    var birthYear = parseInt(birthText, 10);
+    var thisYear = new Date().getFullYear();
+    if (birthText === "") {
+      showSignupMsg("출생년도를 입력해 주세요.", "error");
+      return;
+    }
+    if (!/^[0-9]{4}$/.test(birthText)) {
+      showSignupMsg("출생년도는 숫자 4자리로 입력해 주세요. 예) 1955", "error");
+      return;
+    }
+    if (birthYear < 1900 || birthYear > thisYear) {
+      showSignupMsg("출생년도를 다시 확인해 주세요. (1900 ~ " + thisYear + ")", "error");
+      return;
+    }
     if (!db) {
       showSignupMsg("가입 서버에 연결하지 못했습니다. 인터넷 연결을 확인해 주세요.", "error");
       return;
@@ -911,7 +931,11 @@
     button.textContent = "가입 중...";
 
     try {
-      var result = await db.auth.signUp({ email: email, password: password });
+      var result = await db.auth.signUp({
+        email: email,
+        password: password,
+        options: { data: { birth_year: birthYear } }   // 회원 정보에 출생년도 함께 저장
+      });
       if (result.error) {
         showSignupMsg(koreanError(result.error), "error");
       } else {
