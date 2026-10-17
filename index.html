@@ -905,6 +905,21 @@
     text-align: right;
     margin: 0;
   }
+  .confirm-address {           /* 확인 화면의 긴 주소는 줄바꿈 */
+    text-align: right;
+    white-space: normal !important;
+    word-break: keep-all;
+  }
+  .confirm-ask {               /* 이대로 주문하시겠습니까? */
+    font-size: 20px;
+    font-weight: bold;
+    color: #4a7023;
+    text-align: center;
+    margin: 0 0 16px 0;
+  }
+  .signup-buttons .order-final {
+    background-color: #558b2f;
+  }
   .signup-box textarea {       /* 주소 칸 */
     display: block;
     width: 100%;
@@ -1238,7 +1253,10 @@
   <!-- 주문서 창 (장바구니의 주문하기를 누르면 나타남) -->
   <div class="signup-bg" id="order-bg" onclick="if (event.target === this) closeOrder()">
     <div class="signup-box">
-      <h2>주문서</h2>
+      <h2 id="order-title">주문서</h2>
+
+      <!-- 1단계: 주문서 작성 -->
+      <div id="order-step-form">
       <p class="signup-intro">🌿 받으실 분 정보를 적어 주세요</p>
 
       <!-- 주문할 상품 (장바구니 내용을 보여주기만 함) -->
@@ -1262,10 +1280,38 @@
         <p class="signup-msg" id="order-msg"></p>
 
         <div class="signup-buttons">
-          <button type="submit" id="order-button">주문하기</button>
+          <button type="submit" id="order-button">다음</button>
           <button type="button" class="close" onclick="closeOrder(); openCart();">장바구니로 돌아가기</button>
         </div>
       </form>
+      </div>
+
+      <!-- 2단계: 주문 내용 확인 -->
+      <div id="order-step-confirm" style="display: none">
+        <p class="signup-intro">🌿 주문 내용을 한 번 더 확인해 주세요</p>
+
+        <div class="order-summary">
+          <h3>받는 분</h3>
+          <div class="order-line"><span>이름</span><span id="confirm-name"></span></div>
+          <div class="order-line"><span>연락처</span><span id="confirm-phone"></span></div>
+          <div class="order-line"><span>주소</span><span class="confirm-address" id="confirm-address"></span></div>
+        </div>
+
+        <div class="order-summary">
+          <h3>주문할 상품</h3>
+          <div id="confirm-items"></div>
+          <div class="order-total"><span>전체 합계</span><span id="confirm-total"></span></div>
+        </div>
+
+        <p class="confirm-ask">이대로 주문하시겠습니까?</p>
+
+        <p class="signup-msg" id="confirm-msg"></p>
+
+        <div class="signup-buttons">
+          <button type="button" class="order-final" onclick="placeOrder()">주문하기</button>
+          <button type="button" class="close" onclick="showOrderStep('form')">고치기</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2253,6 +2299,7 @@
 
     drawOrderSummary();
     document.getElementById("order-msg").className = "signup-msg";
+    showOrderStep("form");
     closeCart();
     document.getElementById("order-bg").style.display = "block";
 
@@ -2295,7 +2342,7 @@
       : "🚚 5만원 이상 구매하시면 무료배송";
   }
 
-  // 주문하기: 입력만 확인합니다 (저장은 아직 하지 않음)
+  // 다음: 입력을 확인하고 확인 화면으로 넘어갑니다 (저장은 아직 하지 않음)
   function submitOrder(event) {
     event.preventDefault();   // 화면이 새로고침되지 않게
 
@@ -2325,7 +2372,49 @@
       return;
     }
 
-    showMsg("order-msg", "주문서가 잘 작성되었습니다. 주문 접수 기능은 곧 열릴 예정입니다. 급하시면 1588-0000으로 전화 주세요.", "info");
+    // 다 맞으면 주문 내용 확인 화면으로
+    document.getElementById("order-msg").className = "signup-msg";
+    drawOrderConfirm(name, phone, address);
+    showOrderStep("confirm");
+  }
+
+  // 주문서 단계 바꾸기: "form"(작성) / "confirm"(확인)
+  function showOrderStep(step) {
+    var confirm = step === "confirm";
+    document.getElementById("order-step-form").style.display = confirm ? "none" : "block";
+    document.getElementById("order-step-confirm").style.display = confirm ? "block" : "none";
+    document.getElementById("order-title").textContent = confirm ? "주문 확인" : "주문서";
+    document.getElementById("confirm-msg").className = "signup-msg";
+    document.querySelector("#order-bg .signup-box").scrollTop = 0;   // 창 맨 위부터 보이게
+  }
+
+  // 확인 화면 채우기 (받는 분 정보 + 상품과 수량 + 전체 합계)
+  function drawOrderConfirm(name, phone, address) {
+    document.getElementById("confirm-name").textContent = name;
+    document.getElementById("confirm-phone").textContent = phone;
+    document.getElementById("confirm-address").textContent = address;
+
+    var box = document.getElementById("confirm-items");
+    box.innerHTML = "";
+    var total = 0;
+    for (var i = 0; i < cart.length; i++) {
+      var line = document.createElement("div");
+      line.className = "order-line";
+      var item = document.createElement("span");
+      item.textContent = cart[i].name + " × " + cart[i].qty + "개";
+      var price = document.createElement("span");
+      price.textContent = won(cart[i].price * cart[i].qty);
+      line.appendChild(item);
+      line.appendChild(price);
+      box.appendChild(line);
+      total += cart[i].price * cart[i].qty;
+    }
+    document.getElementById("confirm-total").textContent = won(total);
+  }
+
+  // 최종 주문하기: 아직은 안내만 (저장하지 않음)
+  function placeOrder() {
+    showMsg("confirm-msg", "지금은 다음 시간에 완성됩니다", "info");
   }
 </script>
 
