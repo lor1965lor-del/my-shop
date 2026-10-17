@@ -832,6 +832,22 @@
   }
 
   /* ===== 로그인 (창 모양은 회원가입과 같은 스타일을 씁니다) ===== */
+  .signup-box .remember {      /* 아이디 저장 체크 */
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 24px;
+    cursor: pointer;
+    margin: 0 0 22px 0;
+  }
+  .signup-box .remember input {
+    width: 30px;
+    height: 30px;
+    margin: 0;
+    padding: 0;
+    accent-color: #558b2f;
+    cursor: pointer;
+  }
   .switch-link {               /* 로그인 ↔ 회원가입 바꾸기 */
     font-size: 22px;
     text-align: center;
@@ -1092,6 +1108,11 @@
 
         <label for="login-password">비밀번호</label>
         <input type="password" id="login-password" placeholder="비밀번호 입력" autocomplete="current-password">
+
+        <label class="remember" for="login-remember">
+          <input type="checkbox" id="login-remember">
+          아이디(이메일) 저장
+        </label>
 
         <p class="signup-msg" id="login-msg"></p>
 
@@ -1529,7 +1550,30 @@
   // ===== 로그인 =====
   function openLogin() {
     document.getElementById("login-bg").style.display = "block";
-    document.getElementById("login-email").focus();
+
+    // 저장해 둔 아이디가 있으면 미리 채워 둡니다
+    var saved = "";
+    try {
+      saved = localStorage.getItem("savedEmail") || "";
+    } catch (e) {}
+    if (saved) {
+      document.getElementById("login-email").value = saved;
+      document.getElementById("login-remember").checked = true;
+      document.getElementById("login-password").focus();   // 바로 비밀번호부터
+    } else {
+      document.getElementById("login-email").focus();
+    }
+  }
+
+  // 로그인에 성공하면, 체크했을 때만 아이디를 이 기기에 저장 (체크 안 하면 지움)
+  function rememberEmail(email) {
+    try {
+      if (document.getElementById("login-remember").checked) {
+        localStorage.setItem("savedEmail", email);
+      } else {
+        localStorage.removeItem("savedEmail");
+      }
+    } catch (e) {}
   }
 
   function closeLogin() {
@@ -1569,6 +1613,7 @@
         showMsg("login-msg", koreanError(result.error), "error");
       } else {
         showMsg("login-msg", "로그인되었습니다", "ok");
+        rememberEmail(email);
         document.getElementById("login-password").value = "";
       }
     } catch (e) {
