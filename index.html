@@ -401,6 +401,92 @@
   .cart-buttons .close {
     background-color: #999999;
   }
+
+  /* ===== 회원가입 ===== */
+  .signup-open {               /* 맨 위 쇼핑몰 이름 아래 버튼 */
+    margin-top: 15px;
+    font-size: 24px;
+    padding: 12px 30px;
+    background-color: #558b2f;
+  }
+  .signup-bg {                 /* 가입 창을 열면 뒤를 어둡게 */
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 20;
+  }
+  .signup-box {
+    background-color: white;
+    max-width: 520px;
+    width: calc(100% - 32px);
+    margin: 8vh auto;
+    padding: 40px 35px;
+    border-radius: 20px;
+    box-sizing: border-box;
+  }
+  .signup-box h2 {
+    font-size: 40px;
+    color: #4a7023;
+    margin: 0 0 25px 0;
+    text-align: center;
+  }
+  .signup-box label {
+    display: block;
+    font-size: 26px;
+    font-weight: bold;
+    margin: 0 0 8px 0;
+  }
+  .signup-box input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 26px;
+    font-family: inherit;
+    padding: 15px 18px;
+    border: 3px solid #8bc34a;
+    border-radius: 12px;
+    margin: 0 0 22px 0;
+  }
+  .signup-box .hint {          /* 입력칸 아래 작은 안내 */
+    font-size: 20px;
+    color: #666666;
+    margin: -14px 0 22px 0;
+  }
+  .signup-msg {                /* 성공/실패 안내 문구 */
+    display: none;
+    font-size: 24px;
+    font-weight: bold;
+    padding: 15px 20px;
+    border-radius: 12px;
+    margin: 0 0 22px 0;
+  }
+  .signup-msg.ok {
+    display: block;
+    background-color: #e8f5e9;
+    color: #2e7d32;
+  }
+  .signup-msg.error {
+    display: block;
+    background-color: #ffebee;
+    color: #c62828;
+  }
+  .signup-buttons {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+  .signup-buttons button {
+    flex: 1 1 180px;
+    font-size: 26px;
+    padding: 18px 20px;
+  }
+  .signup-buttons .close {
+    background-color: #999999;
+  }
 </style>
 </head>
 
@@ -410,6 +496,7 @@
   <header>
     <h1>🌿 행복축제</h1>
     <p>어르신의 편안한 하루를 응원합니다</p>
+    <button class="signup-open" onclick="openSignup()">회원가입</button>
   </header>
 
   <!-- 큰 배너: 노부부 사진 + 문구 + 버튼 -->
@@ -534,6 +621,28 @@
         <a href="tel:15880000">📞 전화로 주문하기</a>
         <button class="close" onclick="closeCart()">닫기</button>
       </div>
+    </div>
+  </div>
+
+  <!-- 회원가입 창 (버튼을 누르면 나타남) -->
+  <div class="signup-bg" id="signup-bg" onclick="if (event.target === this) closeSignup()">
+    <div class="signup-box">
+      <h2>회원가입</h2>
+      <form onsubmit="signUp(event)" novalidate>
+        <label for="signup-email">이메일</label>
+        <input type="email" id="signup-email" placeholder="예) hong@naver.com" autocomplete="email">
+
+        <label for="signup-password">비밀번호</label>
+        <input type="password" id="signup-password" autocomplete="new-password">
+        <p class="hint">6자 이상 입력해 주세요</p>
+
+        <p class="signup-msg" id="signup-msg"></p>
+
+        <div class="signup-buttons">
+          <button type="submit" id="signup-button">가입</button>
+          <button type="button" class="close" onclick="closeSignup()">닫기</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -725,6 +834,97 @@
   }
 
   drawCart();   // 처음 열 때 한 번 그리기
+
+  // ===== 회원가입 =====
+  function openSignup() {
+    document.getElementById("signup-bg").style.display = "block";
+    document.getElementById("signup-email").focus();
+  }
+
+  function closeSignup() {
+    document.getElementById("signup-bg").style.display = "none";
+  }
+
+  // 안내 문구 보여주기 (kind: "ok" 또는 "error")
+  function showSignupMsg(text, kind) {
+    var msg = document.getElementById("signup-msg");
+    msg.textContent = text;
+    msg.className = "signup-msg " + kind;
+  }
+
+  // Supabase가 알려준 오류를 한국어로 바꿉니다
+  function koreanError(error) {
+    var code = error.code || "";
+    var text = (error.message || "").toLowerCase();
+
+    if (code === "user_already_exists" || code === "email_exists" || text.indexOf("already registered") !== -1) {
+      return "이미 가입된 이메일입니다. 다른 이메일을 입력해 주세요.";
+    }
+    if (code === "weak_password" || text.indexOf("password should be") !== -1) {
+      return "비밀번호가 너무 짧거나 쉽습니다. 6자 이상으로 입력해 주세요.";
+    }
+    if (code === "email_address_invalid" || code === "validation_failed" || text.indexOf("invalid") !== -1) {
+      return "이메일 주소가 올바르지 않습니다. 다시 확인해 주세요.";
+    }
+    if (code === "over_request_rate_limit" || code === "over_email_send_rate_limit" || text.indexOf("rate limit") !== -1) {
+      return "잠깐 사이에 너무 많이 시도하셨습니다. 잠시 후 다시 해 주세요.";
+    }
+    if (code === "signup_disabled") {
+      return "지금은 회원가입을 받지 않고 있습니다.";
+    }
+    if (text.indexOf("fetch") !== -1 || text.indexOf("network") !== -1) {
+      return "인터넷 연결을 확인해 주세요.";
+    }
+    return "가입하지 못했습니다. 잠시 후 다시 해 주세요. (" + error.message + ")";
+  }
+
+  async function signUp(event) {
+    event.preventDefault();   // 화면이 새로고침되지 않게
+
+    var email = document.getElementById("signup-email").value.trim();
+    var password = document.getElementById("signup-password").value;
+
+    // 보내기 전에 먼저 확인
+    if (email === "") {
+      showSignupMsg("이메일을 입력해 주세요.", "error");
+      return;
+    }
+    if (email.indexOf("@") === -1 || email.indexOf(".") === -1) {
+      showSignupMsg("이메일 주소가 올바르지 않습니다. 예) hong@naver.com", "error");
+      return;
+    }
+    if (password === "") {
+      showSignupMsg("비밀번호를 입력해 주세요.", "error");
+      return;
+    }
+    if (password.length < 6) {
+      showSignupMsg("비밀번호는 6자 이상이어야 합니다.", "error");
+      return;
+    }
+    if (!db) {
+      showSignupMsg("가입 서버에 연결하지 못했습니다. 인터넷 연결을 확인해 주세요.", "error");
+      return;
+    }
+
+    var button = document.getElementById("signup-button");
+    button.disabled = true;
+    button.textContent = "가입 중...";
+
+    try {
+      var result = await db.auth.signUp({ email: email, password: password });
+      if (result.error) {
+        showSignupMsg(koreanError(result.error), "error");
+      } else {
+        showSignupMsg("가입이 완료되었습니다", "ok");
+        document.getElementById("signup-password").value = "";
+      }
+    } catch (e) {
+      showSignupMsg(koreanError(e), "error");
+    }
+
+    button.disabled = false;
+    button.textContent = "가입";
+  }
 </script>
 
 </body>
