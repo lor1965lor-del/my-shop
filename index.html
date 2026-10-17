@@ -1142,15 +1142,11 @@
   }
 
   // 카테고리 버튼을 누르면 그 상품만 보입니다
+  var currentCategory = "all";
+
   function showCategory(category, clickedButton) {
-    var cards = document.querySelectorAll(".card");
-    for (var i = 0; i < cards.length; i++) {
-      if (category === "all" || cards[i].getAttribute("data-category") === category) {
-        cards[i].style.display = "";        // 보이기
-      } else {
-        cards[i].style.display = "none";    // 숨기기
-      }
-    }
+    currentCategory = category;
+    filterCards();
 
     // 누른 버튼에만 색을 칠합니다
     var buttons = document.querySelectorAll(".categories button");
@@ -1158,6 +1154,17 @@
       buttons[j].classList.remove("on");
     }
     clickedButton.classList.add("on");
+  }
+
+  function filterCards() {
+    var cards = document.querySelectorAll(".card");
+    for (var i = 0; i < cards.length; i++) {
+      if (currentCategory === "all" || cards[i].getAttribute("data-category") === currentCategory) {
+        cards[i].style.display = "";        // 보이기
+      } else {
+        cards[i].style.display = "none";    // 숨기기
+      }
+    }
   }
 
   // ===== 장바구니 =====
@@ -1334,17 +1341,7 @@
     // 카드에 마우스를 올리면 3D로 기울어짐 (유리 카드 + 상품 카드)
     var tilts = document.querySelectorAll(".tilt, .card");
     for (var t = 0; t < tilts.length; t++) {
-      tilts[t].addEventListener("mousemove", function (e) {
-        var r = this.getBoundingClientRect();
-        var x = (e.clientX - r.left) / r.width - 0.5;
-        var y = (e.clientY - r.top) / r.height - 0.5;
-        this.style.transition = "transform 0.1s ease-out";
-        this.style.transform = "perspective(800px) rotateY(" + (x * 12) + "deg) rotateX(" + (-y * 12) + "deg) scale(1.03)";
-      });
-      tilts[t].addEventListener("mouseleave", function () {
-        this.style.transition = "transform 0.5s ease";
-        this.style.transform = "";
-      });
+      addTilt(tilts[t]);
     }
 
     // 버튼이 마우스 쪽으로 살짝 끌려옴 (마그네틱 버튼)
@@ -1362,9 +1359,28 @@
     }
   }
 
+  // 카드 하나에 기울어짐 효과 붙이기 (마우스가 있는 기기에서만)
+  function addTilt(el) {
+    if (reduceMotion || !hasMouse) {
+      return;
+    }
+    el.addEventListener("mousemove", function (e) {
+      var r = el.getBoundingClientRect();
+      var x = (e.clientX - r.left) / r.width - 0.5;
+      var y = (e.clientY - r.top) / r.height - 0.5;
+      el.style.transition = "transform 0.1s ease-out";
+      el.style.transform = "perspective(800px) rotateY(" + (x * 12) + "deg) rotateX(" + (-y * 12) + "deg) scale(1.03)";
+    });
+    el.addEventListener("mouseleave", function () {
+      el.style.transition = "transform 0.5s ease";
+      el.style.transform = "";
+    });
+  }
+
   // 스크롤해서 화면에 들어오면 부드럽게 나타남
+  var observer = null;
   if (!reduceMotion && "IntersectionObserver" in window) {
-    var observer = new IntersectionObserver(function (entries) {
+    observer = new IntersectionObserver(function (entries) {
       for (var k = 0; k < entries.length; k++) {
         if (entries[k].isIntersecting) {
           entries[k].target.classList.add("show");
@@ -1375,11 +1391,90 @@
 
     var targets = document.querySelectorAll(".categories, .card, .about, footer");
     for (var v = 0; v < targets.length; v++) {
-      targets[v].classList.add("reveal");
-      targets[v].style.transitionDelay = (v % 3) * 0.08 + "s";   // 카드가 하나씩 차례로
-      observer.observe(targets[v]);
+      addReveal(targets[v], v);
     }
   }
+
+  function addReveal(el, index) {
+    if (!observer) {
+      return;
+    }
+    el.classList.add("reveal");
+    el.style.transitionDelay = (index % 3) * 0.08 + "s";   // 카드가 하나씩 차례로
+    observer.observe(el);
+  }
+
+  // ===== 상품 (Supabase에서 불러오기) =====
+  // 불러오지 못하면 페이지에 미리 들어 있는 상품이 그대로 보입니다
+  async function loadProducts() {
+    if (!db) {
+      return;
+    }
+    try {
+      var result = await db.from("products").select("*").order("sort_order");
+      if (result.error || !result.data || result.data.length === 0) {
+        return;
+      }
+      var box = document.querySelector(".products");
+      box.innerHTML = "";
+      for (var i = 0; i < result.data.length; i++) {
+        var card = makeCard(result.data[i]);
+        box.appendChild(card);
+        addTilt(card);
+        addReveal(card, i);
+      }
+      filterCards();   // 고른 카테고리 다시 적용
+    } catch (e) {
+      // 인터넷 문제 등: 원래 상품을 그대로 둡니다
+    }
+  }
+
+  // 상품 정보로 카드 하나 만들기 (모양은 원래 카드와 같음)
+  function makeCard(p) {
+    var card = document.createElement("div");
+    card.className = "card";
+    card.setAttribute("data-category", p.category);
+
+    if (p.is_best) {
+      var best = document.createElement("div");
+      best.className = "best";
+      best.textContent = "베스트";
+      card.appendChild(best);
+    }
+
+    var img = document.createElement("img");
+    img.src = p.image;
+    img.alt = p.name;
+    card.appendChild(img);
+
+    var name = document.createElement("div");
+    name.className = "name";
+    name.textContent = p.name;
+    card.appendChild(name);
+
+    var oldPrice = document.createElement("div");
+    oldPrice.className = "old-price";
+    oldPrice.textContent = won(p.old_price);
+    card.appendChild(oldPrice);
+
+    var price = document.createElement("div");
+    price.className = "price";
+    var rate = document.createElement("span");
+    rate.className = "rate";
+    rate.textContent = Math.round((p.old_price - p.price) / p.old_price * 100) + "%";   // 할인율 자동 계산
+    price.appendChild(rate);
+    price.appendChild(document.createTextNode(won(p.price)));   // 장바구니가 이 글자에서 가격을 읽습니다
+    card.appendChild(price);
+
+    var button = document.createElement("button");
+    button.textContent = "담기";
+    button.onclick = function () { addToCart(button); };
+    card.appendChild(button);
+
+    return card;
+  }
+
+  loadProducts();
 
   // ===== 회원가입 =====
   function openSignup() {
