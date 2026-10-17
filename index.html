@@ -863,7 +863,20 @@
     flex-wrap: wrap;
     gap: 12px;
   }
-  .nav-user {                  /* 로그인한 분 이메일 */
+  .logout-btn {                /* 로그아웃: 작고 단정한 테두리 버튼 */
+    font-size: 17px;
+    padding: 6px 16px;
+    color: rgba(245, 245, 247, 0.8);
+    background-color: transparent;
+    border: 1px solid rgba(245, 245, 247, 0.4);
+    border-radius: 8px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .logout-btn:hover {
+    color: #f5f5f7;
+    border-color: #f5f5f7;
+  }
+  .nav-user {                  /* 로그인한 분 환영 문구 */
     font-size: 22px;
     color: #f5f5f7;
     word-break: break-all;
@@ -885,7 +898,7 @@
       <!-- 로그인 후 -->
       <div class="nav-group" id="nav-member" style="display: none">
         <span class="nav-user" id="nav-user"></span>
-        <button class="signup-open" onclick="logOut()">로그아웃</button>
+        <button class="logout-btn" onclick="logOut()">로그아웃</button>
       </div>
     </nav>
 
