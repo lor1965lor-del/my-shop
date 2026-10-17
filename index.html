@@ -419,8 +419,35 @@
     color: #c62828;
     margin-right: 10px;
   }
+  .card .wish {                /* 찜하기 하트: 카드 오른쪽 위 */
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 2;
+    width: 54px;
+    height: 54px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    line-height: 1;
+    color: #e53935;
+    background-color: rgba(255, 255, 255, 0.92);
+    border-radius: 50%;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    transition: transform 0.15s, background-color 0.2s, color 0.2s;
+  }
+  .card .wish:hover {
+    transform: scale(1.12);
+  }
+  .card .wish.on {             /* 찜한 상품: 꽉 찬 하트 */
+    color: white;
+    background-color: #ff2e88;
+  }
   .best {
     position: absolute;      /* 카드 왼쪽 위에 붙임 */
+    z-index: 2;              /* 사진(색 보정 효과)보다 위에 보이게 */
     top: 0;
     left: 0;
     background-color: #e53935;
@@ -807,6 +834,11 @@
     background-color: #e8f5e9;
     color: #2e7d32;
   }
+  .signup-msg.info {           /* 안내 (예: 로그인이 필요합니다) */
+    display: block;
+    background-color: #fff8e1;
+    color: #8d6e00;
+  }
   .signup-msg.error {
     display: block;
     background-color: #ffebee;
@@ -963,6 +995,7 @@
       <button onclick="showCategory('bedding', this)">침구용품</button>
       <button onclick="showCategory('kitchen', this)">주방용품</button>
       <button onclick="showCategory('clothes', this)">의류잡화</button>
+      <button id="wish-cat" onclick="showCategory('wish', this)">♥ 찜한 상품</button>
 
       <!-- 안내 메뉴 -->
       <a class="info" href="#" onclick="showAlert()">주문안내</a>
@@ -1172,13 +1205,160 @@
 
   function filterCards() {
     var cards = document.querySelectorAll(".card");
+    var shown = 0;
     for (var i = 0; i < cards.length; i++) {
-      if (currentCategory === "all" || cards[i].getAttribute("data-category") === currentCategory) {
-        cards[i].style.display = "";        // 보이기
+      var show;
+      if (currentCategory === "all") {
+        show = true;
+      } else if (currentCategory === "wish") {
+        show = isWished(cards[i]);          // 찜한 상품만
       } else {
-        cards[i].style.display = "none";    // 숨기기
+        show = cards[i].getAttribute("data-category") === currentCategory;
+      }
+      cards[i].style.display = show ? "" : "none";   // 보이기 / 숨기기
+      if (show) {
+        shown++;
       }
     }
+
+    // 찜한 상품이 하나도 없을 때 안내
+    var empty = document.getElementById("wish-empty");
+    if (currentCategory === "wish" && shown === 0) {
+      if (!empty) {
+        empty = document.createElement("p");
+        empty.id = "wish-empty";
+        empty.className = "cart-empty";
+        document.querySelector(".products").appendChild(empty);
+      }
+      empty.textContent = cartUser
+        ? "아직 찜한 상품이 없습니다. 마음에 드는 상품의 ♡를 눌러 보세요."
+        : "로그인하시면 찜한 상품을 모아 볼 수 있습니다.";
+      empty.style.display = "";
+    } else if (empty) {
+      empty.style.display = "none";
+    }
+  }
+
+  // ===== 찜하기 (로그인한 회원만, Supabase wishlist_items에 저장) =====
+  var wished = {};   // 찜한 상품 번호: { "1": true, ... }
+
+  function isWished(card) {
+    var id = card.getAttribute("data-id");
+    return !!(id && wished[id]);
+  }
+
+  // 카드에 하트 버튼 붙이기
+  function addHeart(card) {
+    if (card.querySelector(".wish")) {
+      return;
+    }
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "wish";
+    button.onclick = function (e) {
+      e.stopPropagation();
+      toggleWish(card);
+    };
+    card.appendChild(button);
+    drawHeart(card);
+  }
+
+  function drawHeart(card) {
+    var button = card.querySelector(".wish");
+    if (!button) {
+      return;
+    }
+    var on = isWished(card);
+    button.textContent = on ? "♥" : "♡";
+    button.classList.toggle("on", on);
+    button.setAttribute("aria-pressed", on ? "true" : "false");
+    button.setAttribute("aria-label", on ? "찜 빼기" : "찜하기");
+    button.title = on ? "찜 빼기" : "찜하기";
+  }
+
+  // 모든 하트와 "찜한 상품" 버튼의 개수 다시 그리기
+  function drawHearts() {
+    var cards = document.querySelectorAll(".card");
+    for (var i = 0; i < cards.length; i++) {
+      drawHeart(cards[i]);
+    }
+    var count = Object.keys(wished).length;
+    document.getElementById("wish-cat").textContent = "♥ 찜한 상품" + (count ? " (" + count + ")" : "");
+  }
+
+  // 카드의 Supabase 상품 번호 (없으면 이름으로 찾아서 카드에 적어 둠)
+  async function cardProductId(card) {
+    var id = parseInt(card.getAttribute("data-id"), 10);
+    if (id) {
+      return id;
+    }
+    var name = card.querySelector(".name").textContent.trim();
+    var result = await db.from("products").select("id").eq("name", name).limit(1);
+    if (result.error || !result.data || result.data.length === 0) {
+      return null;
+    }
+    card.setAttribute("data-id", result.data[0].id);
+    return result.data[0].id;
+  }
+
+  async function toggleWish(card) {
+    if (!cartUser) {
+      openLogin();
+      showMsg("login-msg", "찜하기는 로그인 후 이용하실 수 있습니다.", "info");
+      return;
+    }
+    var id = await cardProductId(card);
+    if (!id) {
+      return;
+    }
+
+    // 화면부터 바로 바꾸고, Supabase에 저장
+    var on = !wished[id];
+    setWish(id, on);
+    try {
+      var result = on
+        ? await db.from("wishlist_items").insert({ user_id: cartUser, product_id: id })
+        : await db.from("wishlist_items").delete().eq("product_id", id);
+      if (result.error && result.error.code !== "23505") {   // 23505 = 이미 찜함 (괜찮음)
+        console.warn("찜 저장 실패", result.error);
+        setWish(id, !on);   // 실패하면 되돌리기
+      }
+    } catch (e) {
+      console.warn("찜 저장 실패", e);
+      setWish(id, !on);
+    }
+  }
+
+  function setWish(id, on) {
+    if (on) {
+      wished[id] = true;
+    } else {
+      delete wished[id];
+    }
+    drawHearts();
+    filterCards();
+  }
+
+  // 로그인하면 Supabase에서 찜 목록 불러오기
+  async function loadWishlist() {
+    var result = await db.from("wishlist_items").select("product_id");
+    if (result.error || !result.data) {
+      console.warn("찜 목록 불러오기 실패", result.error);
+      return;
+    }
+    wished = {};
+    for (var i = 0; i < result.data.length; i++) {
+      wished[result.data[i].product_id] = true;
+    }
+    drawHearts();
+    filterCards();
+  }
+
+  // 로그아웃하면 화면의 찜 표시 지우기
+  function clearWishlist() {
+    wished = {};
+    drawHearts();
+    filterCards();
   }
 
   // ===== 장바구니 =====
@@ -1580,6 +1760,7 @@
         addTilt(card);
         addReveal(card, i);
       }
+      drawHearts();
       filterCards();   // 고른 카테고리 다시 적용
       showBest(result.data);
     } catch (e) {
@@ -1650,7 +1831,14 @@
     button.onclick = function () { addToCart(button); };
     card.appendChild(button);
 
+    addHeart(card);
     return card;
+  }
+
+  // 미리 들어 있는 상품 카드에도 하트 붙이기 (Supabase 상품이 오면 새 카드로 바뀜)
+  var startCards = document.querySelectorAll(".card");
+  for (var sc = 0; sc < startCards.length; sc++) {
+    addHeart(startCards[sc]);
   }
 
   loadProducts();
@@ -1937,9 +2125,11 @@
         if (cartUser !== session.user.id) {
           cartUser = session.user.id;
           setTimeout(loadServerCart, 0);
+          setTimeout(loadWishlist, 0);
         }
       } else if (cartUser) {
         clearCartOnLogout();
+        clearWishlist();
       }
     });
   }
