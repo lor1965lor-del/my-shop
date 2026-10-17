@@ -440,7 +440,8 @@
     font-weight: bold;
     margin: 0 0 8px 0;
   }
-  .signup-box input {
+  .signup-box input,
+  .signup-box select {
     display: block;
     width: 100%;
     box-sizing: border-box;
@@ -455,6 +456,23 @@
     font-size: 20px;
     color: #666666;
     margin: -14px 0 22px 0;
+  }
+  .guardian-toggle {           /* 보호자 정보 추가 버튼 */
+    display: block;
+    width: 100%;
+    background-color: white;
+    color: #4a7023;
+    border: 3px dashed #8bc34a;
+    font-size: 24px;
+    padding: 15px 20px;
+    margin: 0 0 22px 0;
+  }
+  .guardian {                  /* 보호자 입력칸 묶음 (처음엔 숨김) */
+    display: none;
+    background-color: #f6fbef;
+    border-radius: 15px;
+    padding: 20px 20px 2px 20px;
+    margin: 0 0 22px 0;
   }
   .signup-msg {                /* 성공/실패 안내 문구 */
     display: none;
@@ -639,6 +657,23 @@
         <label for="signup-birth">출생년도</label>
         <input type="text" id="signup-birth" inputmode="numeric" maxlength="4" placeholder="예) 1955" autocomplete="bday-year">
         <p class="hint">태어난 해를 숫자 4자리로 입력해 주세요</p>
+
+        <!-- 보호자 정보 (원하는 분만) -->
+        <button type="button" class="guardian-toggle" id="guardian-toggle" onclick="toggleGuardian()">＋ 보호자 정보 추가하기 (선택)</button>
+        <div class="guardian" id="guardian">
+          <label for="guardian-relation">보호자와의 관계</label>
+          <select id="guardian-relation">
+            <option value="">골라 주세요</option>
+            <option value="자녀">자녀</option>
+            <option value="배우자">배우자</option>
+            <option value="손자·손녀">손자·손녀</option>
+            <option value="형제·자매">형제·자매</option>
+            <option value="기타">기타</option>
+          </select>
+
+          <label for="guardian-phone">보호자 전화번호</label>
+          <input type="tel" id="guardian-phone" inputmode="numeric" placeholder="예) 010-1234-5678" autocomplete="off">
+        </div>
 
         <p class="signup-msg" id="signup-msg"></p>
 
@@ -849,6 +884,21 @@
     document.getElementById("signup-bg").style.display = "none";
   }
 
+  // 보호자 정보 칸 열고 닫기 (닫으면 입력한 내용도 지움)
+  function toggleGuardian() {
+    var box = document.getElementById("guardian");
+    var toggle = document.getElementById("guardian-toggle");
+    if (box.style.display === "block") {
+      box.style.display = "none";
+      document.getElementById("guardian-relation").value = "";
+      document.getElementById("guardian-phone").value = "";
+      toggle.textContent = "＋ 보호자 정보 추가하기 (선택)";
+    } else {
+      box.style.display = "block";
+      toggle.textContent = "－ 보호자 정보 빼기";
+    }
+  }
+
   // 안내 문구 보여주기 (kind: "ok" 또는 "error")
   function showSignupMsg(text, kind) {
     var msg = document.getElementById("signup-msg");
@@ -921,6 +971,29 @@
       showSignupMsg("출생년도를 다시 확인해 주세요. (1900 ~ " + thisYear + ")", "error");
       return;
     }
+
+    // 보호자 정보는 선택: 둘 다 비우거나, 둘 다 입력해야 합니다
+    var relation = document.getElementById("guardian-relation").value;
+    var phone = document.getElementById("guardian-phone").value.trim();
+    var phoneDigits = phone.replace(/[^0-9]/g, "");   // 숫자만 남김
+    if (relation !== "" && phone === "") {
+      showSignupMsg("보호자 전화번호를 입력해 주세요.", "error");
+      return;
+    }
+    if (relation === "" && phone !== "") {
+      showSignupMsg("보호자와의 관계를 골라 주세요.", "error");
+      return;
+    }
+    if (phone !== "" && (phoneDigits.length < 9 || phoneDigits.length > 11 || phoneDigits.charAt(0) !== "0")) {
+      showSignupMsg("보호자 전화번호를 다시 확인해 주세요. 예) 010-1234-5678", "error");
+      return;
+    }
+
+    var userInfo = { birth_year: birthYear };
+    if (relation !== "") {
+      userInfo.guardian_relation = relation;
+      userInfo.guardian_phone = phoneDigits;
+    }
     if (!db) {
       showSignupMsg("가입 서버에 연결하지 못했습니다. 인터넷 연결을 확인해 주세요.", "error");
       return;
@@ -934,7 +1007,7 @@
       var result = await db.auth.signUp({
         email: email,
         password: password,
-        options: { data: { birth_year: birthYear } }   // 회원 정보에 출생년도 함께 저장
+        options: { data: userInfo }   // 회원 정보에 출생년도(+보호자 정보) 함께 저장
       });
       if (result.error) {
         showSignupMsg(koreanError(result.error), "error");
