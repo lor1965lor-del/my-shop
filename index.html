@@ -863,6 +863,67 @@
     border: 3px solid #8bc34a;
   }
 
+  /* ===== 주문서 (창 모양은 회원가입과 같은 스타일을 씁니다) ===== */
+  .cart-buttons .order-go {    /* 장바구니 안 주문하기 버튼 */
+    background-color: #558b2f;
+  }
+  .order-summary {             /* 주문할 상품 요약 */
+    background-color: white;
+    border: 3px solid #d4f0b0;
+    border-radius: 15px;
+    padding: 18px 22px;
+    margin: 0 0 28px 0;
+  }
+  .order-summary h3 {
+    font-size: 26px;
+    color: #4a7023;
+    margin: 0 0 10px 0;
+  }
+  .order-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    font-size: 22px;
+    padding: 8px 0;
+    border-bottom: 1px dashed #d4f0b0;
+  }
+  .order-line span:last-child {
+    white-space: nowrap;
+    font-weight: bold;
+  }
+  .order-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 28px;
+    font-weight: bold;
+    color: #c62828;
+    margin: 14px 0 4px 0;
+  }
+  .order-ship {
+    font-size: 20px;
+    color: #4a7023;
+    text-align: right;
+    margin: 0;
+  }
+  .signup-box textarea {       /* 주소 칸 */
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 26px;
+    font-family: inherit;
+    line-height: 1.5;
+    padding: 15px 18px;
+    border: 3px solid #8bc34a;
+    border-radius: 12px;
+    background-color: white;
+    resize: vertical;
+    margin: 0 0 22px 0;
+  }
+  .signup-box textarea::placeholder {
+    color: #8a8a8a;
+    font-size: 22px;
+  }
+
   /* ===== 로그인 (창 모양은 회원가입과 같은 스타일을 씁니다) ===== */
   .signup-box .remember {      /* 아이디 저장 체크 */
     display: flex;
@@ -1089,7 +1150,9 @@
       <div id="cart-list"></div>
       <p class="cart-total" id="cart-total"></p>
       <p class="cart-ship" id="cart-ship"></p>
+      <p class="signup-msg" id="order-gate-msg"></p>
       <div class="cart-buttons">
+        <button class="order-go" onclick="openOrder()">🧾 주문하기</button>
         <a href="tel:15880000">📞 전화로 주문하기</a>
         <button class="close" onclick="closeCart()">닫기</button>
       </div>
@@ -1169,6 +1232,40 @@
         </div>
       </form>
       <p class="switch-link">아직 회원이 아니신가요? <a href="#" onclick="closeLogin(); openSignup(); return false;">회원가입</a></p>
+    </div>
+  </div>
+
+  <!-- 주문서 창 (장바구니의 주문하기를 누르면 나타남) -->
+  <div class="signup-bg" id="order-bg" onclick="if (event.target === this) closeOrder()">
+    <div class="signup-box">
+      <h2>주문서</h2>
+      <p class="signup-intro">🌿 받으실 분 정보를 적어 주세요</p>
+
+      <!-- 주문할 상품 (장바구니 내용을 보여주기만 함) -->
+      <div class="order-summary">
+        <h3>주문할 상품</h3>
+        <div id="order-items"></div>
+        <div class="order-total"><span>합계</span><span id="order-total"></span></div>
+        <p class="order-ship" id="order-ship"></p>
+      </div>
+
+      <form onsubmit="submitOrder(event)" novalidate>
+        <label for="order-name">받는 분 이름</label>
+        <input type="text" id="order-name" maxlength="20" placeholder="예: 홍길동" autocomplete="name">
+
+        <label for="order-phone">연락처</label>
+        <input type="tel" id="order-phone" inputmode="numeric" placeholder="예: 010-1234-5678" autocomplete="tel">
+
+        <label for="order-address">주소</label>
+        <textarea id="order-address" rows="2" placeholder="받으실 주소를 한 번에 적어 주세요 (예: 서울시 행복구 축제로 1길 23, 101동 202호)" autocomplete="street-address"></textarea>
+
+        <p class="signup-msg" id="order-msg"></p>
+
+        <div class="signup-buttons">
+          <button type="submit" id="order-button">주문하기</button>
+          <button type="button" class="close" onclick="closeOrder(); openCart();">장바구니로 돌아가기</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -2132,6 +2229,103 @@
         clearWishlist();
       }
     });
+  }
+</script>
+
+<script>
+  // ===== 주문서 (아직 저장하지 않고 화면만) =====
+
+  // 장바구니의 주문하기 버튼: 로그인 + 담은 상품이 있어야 주문서가 열립니다
+  async function openOrder() {
+    var gate = document.getElementById("order-gate-msg");
+    gate.className = "signup-msg";   // 안내 숨기기
+
+    if (!cartUser) {
+      closeCart();
+      openLogin();
+      showMsg("login-msg", "주문하시려면 먼저 로그인해 주세요.", "info");
+      return;
+    }
+    if (cart.length === 0) {
+      showMsg("order-gate-msg", "장바구니가 비어 있습니다. 상품을 먼저 담아 주세요.", "info");
+      return;
+    }
+
+    drawOrderSummary();
+    document.getElementById("order-msg").className = "signup-msg";
+    closeCart();
+    document.getElementById("order-bg").style.display = "block";
+
+    // 받는 분 이름이 비어 있으면 회원 이름을 미리 넣어 둡니다
+    var nameInput = document.getElementById("order-name");
+    if (nameInput.value === "" && db) {
+      var result = await db.auth.getUser();
+      var info = (result.data && result.data.user && result.data.user.user_metadata) || {};
+      if (info.name) {
+        nameInput.value = info.name;
+      }
+    }
+    (nameInput.value ? document.getElementById("order-phone") : nameInput).focus();
+  }
+
+  function closeOrder() {
+    document.getElementById("order-bg").style.display = "none";
+  }
+
+  // 장바구니 내용을 주문서에 보여주기 (장바구니는 바꾸지 않음)
+  function drawOrderSummary() {
+    var box = document.getElementById("order-items");
+    box.innerHTML = "";
+    var total = 0;
+    for (var i = 0; i < cart.length; i++) {
+      var line = document.createElement("div");
+      line.className = "order-line";
+      var name = document.createElement("span");
+      name.textContent = cart[i].name + " × " + cart[i].qty;
+      var price = document.createElement("span");
+      price.textContent = won(cart[i].price * cart[i].qty);
+      line.appendChild(name);
+      line.appendChild(price);
+      box.appendChild(line);
+      total += cart[i].price * cart[i].qty;
+    }
+    document.getElementById("order-total").textContent = won(total);
+    document.getElementById("order-ship").textContent = total >= 50000
+      ? "🚚 무료배송입니다!"
+      : "🚚 5만원 이상 구매하시면 무료배송";
+  }
+
+  // 주문하기: 입력만 확인합니다 (저장은 아직 하지 않음)
+  function submitOrder(event) {
+    event.preventDefault();   // 화면이 새로고침되지 않게
+
+    var name = document.getElementById("order-name").value.trim();
+    var phone = document.getElementById("order-phone").value.trim();
+    var phoneDigits = phone.replace(/[^0-9]/g, "");
+    var address = document.getElementById("order-address").value.trim();
+
+    if (name === "") {
+      showMsg("order-msg", "받는 분 이름을 입력해 주세요.", "error");
+      return;
+    }
+    if (phone === "") {
+      showMsg("order-msg", "연락처를 입력해 주세요.", "error");
+      return;
+    }
+    if (phoneDigits.length < 9 || phoneDigits.length > 11 || phoneDigits.charAt(0) !== "0") {
+      showMsg("order-msg", "연락처를 다시 확인해 주세요. 예) 010-1234-5678", "error");
+      return;
+    }
+    if (address === "") {
+      showMsg("order-msg", "받으실 주소를 입력해 주세요.", "error");
+      return;
+    }
+    if (address.length < 5) {
+      showMsg("order-msg", "주소를 조금 더 자세히 적어 주세요.", "error");
+      return;
+    }
+
+    showMsg("order-msg", "주문서가 잘 작성되었습니다. 주문 접수 기능은 곧 열릴 예정입니다. 급하시면 1588-0000으로 전화 주세요.", "info");
   }
 </script>
 
