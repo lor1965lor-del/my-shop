@@ -537,6 +537,16 @@
     </div>
   </div>
 
+<!-- Supabase(온라인 데이터 저장소) 연결 -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+  // 공개용(publishable) 키라서 사이트에 넣어도 됩니다.
+  // 테이블을 만들 때는 꼭 RLS(행 보안)를 켜서 필요한 것만 허용하세요.
+  var SUPABASE_URL = "https://xrrgyrhjkwlcqmhlcxif.supabase.co";
+  var SUPABASE_KEY = "sb_publishable_HCACD1Jg2Rh83GbmTylRMA_EepXgXbg";
+  var db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+</script>
+
 <script>
   // 버튼을 누르면 알림창이 뜹니다
   function showAlert() {
