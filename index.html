@@ -246,6 +246,133 @@
     border-radius: 15px;
     margin: 0 0 20px 0;
   }
+
+  /* ===== 장바구니 ===== */
+  .card button.added {         /* 담은 직후 잠깐 바뀌는 버튼 색 */
+    background-color: #4a7023;
+  }
+  .cart-open {                 /* 오른쪽 위에 늘 떠 있는 장바구니 버튼 */
+    position: fixed;
+    right: 20px;
+    top: 20px;
+    background-color: #e53935;
+    font-size: 26px;
+    padding: 18px 30px;
+    border-radius: 40px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+  }
+  .cart-bg {                   /* 장바구니를 열면 뒤를 어둡게 */
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 20;
+  }
+  .cart-box {
+    background-color: white;
+    max-width: 600px;
+    max-height: 85vh;
+    overflow-y: auto;          /* 상품이 많으면 안에서 스크롤 */
+    margin: 5vh auto;
+    padding: 30px;
+    border-radius: 20px;
+    box-sizing: border-box;
+    width: calc(100% - 32px);
+  }
+  .cart-box h2 {
+    font-size: 34px;
+    color: #4a7023;
+    margin: 0 0 20px 0;
+  }
+  .cart-item {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 15px 0;
+    border-bottom: 2px solid #d4f0b0;
+  }
+  .cart-item .item-top {       /* 상품 사진 + 이름 + 가격 한 줄 */
+    flex: 1 1 100%;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  .cart-item img {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 12px;
+    background-color: #f2f2f2;
+    flex: 0 0 90px;
+  }
+  .cart-item .item-name {
+    font-size: 24px;
+    font-weight: bold;
+  }
+  .cart-item button {          /* - + 삭제 버튼 */
+    font-size: 24px;
+    padding: 8px 18px;
+  }
+  .cart-item .qty {
+    font-size: 26px;
+    min-width: 40px;
+    text-align: center;
+  }
+  .cart-item .item-price {     /* 이름과 같은 줄 오른쪽 끝 */
+    margin-left: auto;
+    white-space: nowrap;
+    font-size: 24px;
+    font-weight: bold;
+    color: #e53935;
+  }
+  .cart-item .remove {         /* 줄 오른쪽 끝 빼기 버튼 */
+    background-color: #999999;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  .cart-empty {
+    font-size: 24px;
+    text-align: center;
+    padding: 30px 0;
+  }
+  .cart-total {
+    font-size: 30px;
+    font-weight: bold;
+    text-align: right;
+    margin: 20px 0 5px 0;
+  }
+  .cart-ship {
+    font-size: 22px;
+    text-align: right;
+    color: #4a7023;
+    margin: 0 0 25px 0;
+  }
+  .cart-buttons {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+  .cart-buttons a, .cart-buttons button {
+    flex: 1 1 200px;
+    text-align: center;
+    font-size: 26px;
+    padding: 18px 20px;
+    border-radius: 15px;
+    text-decoration: none;
+    box-sizing: border-box;
+  }
+  .cart-buttons a {            /* 전화로 주문하기 */
+    background-color: #e53935;
+    color: white;
+  }
+  .cart-buttons .close {
+    background-color: #999999;
+  }
 </style>
 </head>
 
@@ -296,7 +423,7 @@
         <div class="name">순모 미끄럼방지 양말</div>
         <div class="old-price">18,000원</div>
         <div class="price"><span class="rate">45%</span>9,900원</div>
-        <button onclick="showAlert()">담기</button>
+        <button onclick="addToCart(this)">담기</button>
       </div>
 
       <div class="card" data-category="kitchen">
@@ -305,7 +432,7 @@
         <div class="name">가벼운 휴대 보온병</div>
         <div class="old-price">28,000원</div>
         <div class="price"><span class="rate">43%</span>15,900원</div>
-        <button onclick="showAlert()">담기</button>
+        <button onclick="addToCart(this)">담기</button>
       </div>
 
       <div class="card" data-category="bedding">
@@ -313,7 +440,7 @@
         <div class="name">푹신한 허리 지지 방석</div>
         <div class="old-price">35,000원</div>
         <div class="price"><span class="rate">37%</span>22,000원</div>
-        <button onclick="showAlert()">담기</button>
+        <button onclick="addToCart(this)">담기</button>
       </div>
 
       <div class="card" data-category="health">
@@ -321,7 +448,7 @@
         <div class="name">황금테 고급 돋보기</div>
         <div class="old-price">30,000원</div>
         <div class="price"><span class="rate">37%</span>19,000원</div>
-        <button onclick="showAlert()">담기</button>
+        <button onclick="addToCart(this)">담기</button>
       </div>
 
       <div class="card" data-category="health">
@@ -329,7 +456,7 @@
         <div class="name">고급 원목 지팡이</div>
         <div class="old-price">45,000원</div>
         <div class="price"><span class="rate">36%</span>29,000원</div>
-        <button onclick="showAlert()">담기</button>
+        <button onclick="addToCart(this)">담기</button>
       </div>
 
       <div class="card" data-category="bedding">
@@ -337,7 +464,7 @@
         <div class="name">포근한 이동용 담요</div>
         <div class="old-price">30,000원</div>
         <div class="price"><span class="rate">33%</span>20,000원</div>
-        <button onclick="showAlert()">담기</button>
+        <button onclick="addToCart(this)">담기</button>
       </div>
 
     </div>
@@ -365,6 +492,23 @@
     <p>행복축제 | 서울시 행복구 축제로 1길</p>
   </footer>
 
+  <!-- 오른쪽 위 장바구니 버튼 -->
+  <button class="cart-open" onclick="openCart()">🛒 장바구니 <span id="cart-count">0</span>개 · <span id="cart-sum">0원</span></button>
+
+  <!-- 장바구니 창 (버튼을 누르면 나타남) -->
+  <div class="cart-bg" id="cart-bg" onclick="if (event.target === this) closeCart()">
+    <div class="cart-box">
+      <h2>🛒 장바구니</h2>
+      <div id="cart-list"></div>
+      <p class="cart-total" id="cart-total"></p>
+      <p class="cart-ship" id="cart-ship"></p>
+      <div class="cart-buttons">
+        <a href="tel:15880000">📞 전화로 주문하기</a>
+        <button class="close" onclick="closeCart()">닫기</button>
+      </div>
+    </div>
+  </div>
+
 <script>
   // 버튼을 누르면 알림창이 뜹니다
   function showAlert() {
@@ -389,6 +533,160 @@
     }
     clickedButton.classList.add("on");
   }
+
+  // ===== 장바구니 =====
+  // 담은 상품 목록: [{ name: "상품 이름", price: 9900, qty: 1 }, ...]
+  var cart = [];
+
+  // 예전에 담아둔 상품이 있으면 불러옵니다 (새로고침해도 남아 있게)
+  try {
+    cart = JSON.parse(localStorage.getItem("cart")) || [];
+  } catch (e) {
+    cart = [];
+  }
+
+  // 혹시 같은 상품이 여러 줄로 저장돼 있으면 한 줄로 합칩니다
+  var merged = [];
+  for (var m = 0; m < cart.length; m++) {
+    var same = null;
+    for (var n = 0; n < merged.length; n++) {
+      if (merged[n].name.trim() === cart[m].name.trim()) {
+        same = merged[n];
+      }
+    }
+    if (same) {
+      same.qty += cart[m].qty;
+    } else {
+      cart[m].name = cart[m].name.trim();
+      merged.push(cart[m]);
+    }
+  }
+  cart = merged;
+
+  function saveCart() {
+    try {
+      localStorage.setItem("cart", JSON.stringify(cart));
+    } catch (e) {}
+  }
+
+  // 숫자를 "9,900원" 모양으로 바꿉니다
+  function won(number) {
+    return number.toLocaleString("ko-KR") + "원";
+  }
+
+  // 담기 버튼을 누르면 그 카드의 상품을 장바구니에 넣습니다
+  function addToCart(button) {
+    var card = button.parentElement;
+    var name = card.querySelector(".name").textContent.trim();
+    var priceText = card.querySelector(".price").lastChild.textContent;   // 예: "9,900원"
+    var price = parseInt(priceText.replace(/[^0-9]/g, ""), 10);
+    var img = card.querySelector("img").getAttribute("src");             // 예: "images/socks.jpg"
+
+    var found = false;
+    for (var i = 0; i < cart.length; i++) {
+      if (cart[i].name === name) {
+        cart[i].qty += 1;       // 이미 담긴 상품이면 줄을 늘리지 않고 개수만 늘림
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      cart.push({ name: name, price: price, img: img, qty: 1 });
+    }
+    saveCart();
+    drawCart();
+
+    // 담았다는 표시를 잠깐 보여줍니다
+    button.textContent = "담았어요 ✓";
+    button.classList.add("added");
+    setTimeout(function () {
+      button.textContent = "담기";
+      button.classList.remove("added");
+    }, 1500);
+  }
+
+  // 개수 바꾸기 (+1 또는 -1)
+  function changeQty(index, amount) {
+    cart[index].qty += amount;
+    if (cart[index].qty < 1) {
+      cart.splice(index, 1);     // 0개가 되면 빼기
+    }
+    saveCart();
+    drawCart();
+  }
+
+  function removeItem(index) {
+    cart.splice(index, 1);
+    saveCart();
+    drawCart();
+  }
+
+  // 상품 사진 주소를 찾습니다 (사진 정보 없이 예전에 담아둔 상품은 같은 이름의 카드에서 찾음)
+  function findImage(item) {
+    if (item.img) {
+      return item.img;
+    }
+    var cards = document.querySelectorAll(".card");
+    for (var i = 0; i < cards.length; i++) {
+      if (cards[i].querySelector(".name").textContent === item.name) {
+        return cards[i].querySelector("img").getAttribute("src");
+      }
+    }
+    return "";
+  }
+
+  // 장바구니 내용을 화면에 그립니다
+  function drawCart() {
+    var list = document.getElementById("cart-list");
+    var count = 0;
+    var total = 0;
+    var html = "";
+
+    for (var i = 0; i < cart.length; i++) {
+      count += cart[i].qty;
+      total += cart[i].price * cart[i].qty;
+      html +=
+        '<div class="cart-item">' +
+          '<div class="item-top">' +
+            '<img src="' + findImage(cart[i]) + '" alt="' + cart[i].name + '">' +
+            '<div class="item-name">' + cart[i].name + '</div>' +
+            '<span class="item-price">' + won(cart[i].price * cart[i].qty) + '</span>' +
+            '<button class="remove" onclick="removeItem(' + i + ')">빼기</button>' +
+          '</div>' +
+          '<button onclick="changeQty(' + i + ', -1)">−</button>' +
+          '<span class="qty">' + cart[i].qty + '</span>' +
+          '<button onclick="changeQty(' + i + ', 1)">+</button>' +
+        '</div>';
+    }
+
+    if (cart.length === 0) {
+      html = '<p class="cart-empty">아직 담은 상품이 없습니다.</p>';
+    }
+    list.innerHTML = html;
+
+    document.getElementById("cart-count").textContent = count;
+    document.getElementById("cart-sum").textContent = won(total);
+    document.getElementById("cart-total").textContent = cart.length ? "합계 " + won(total) : "";
+
+    var ship = document.getElementById("cart-ship");
+    if (cart.length === 0) {
+      ship.textContent = "";
+    } else if (total >= 50000) {
+      ship.textContent = "🚚 무료배송입니다!";
+    } else {
+      ship.textContent = "🚚 " + won(50000 - total) + " 더 담으시면 무료배송!";
+    }
+  }
+
+  function openCart() {
+    document.getElementById("cart-bg").style.display = "block";
+  }
+
+  function closeCart() {
+    document.getElementById("cart-bg").style.display = "none";
+  }
+
+  drawCart();   // 처음 열 때 한 번 그리기
 </script>
 
 </body>
