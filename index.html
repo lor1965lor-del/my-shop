@@ -918,9 +918,10 @@
 
       <!-- 유리 카드: 오늘의 베스트 -->
       <a class="glass tilt" href="#shop">
-        <span class="glass-tag">BEST · 45% OFF</span>
-        <strong>순모 미끄럼방지 양말</strong>
-        <span class="glass-price"><s>18,000원</s>9,900원</span>
+        <!-- 내용은 Supabase 베스트 상품으로 바뀝니다 (못 불러오면 아래 글자 그대로) -->
+        <span class="glass-tag" id="glass-tag">BEST · 45% OFF</span>
+        <strong id="glass-name">순모 미끄럼방지 양말</strong>
+        <span class="glass-price"><s id="glass-old">18,000원</s><span id="glass-price">9,900원</span></span>
       </a>
     </div>
   </section>
@@ -1424,9 +1425,30 @@
         addReveal(card, i);
       }
       filterCards();   // 고른 카테고리 다시 적용
+      showBest(result.data);
     } catch (e) {
       // 인터넷 문제 등: 원래 상품을 그대로 둡니다
     }
+  }
+
+  // 할인율 계산 (예: 18,000원 → 9,900원 = 45)
+  function discountRate(p) {
+    return Math.round((p.old_price - p.price) / p.old_price * 100);
+  }
+
+  // 첫 화면 유리 카드에 베스트 상품 보여주기 (베스트가 없으면 첫 상품)
+  function showBest(products) {
+    var best = products[0];
+    for (var i = 0; i < products.length; i++) {
+      if (products[i].is_best) {
+        best = products[i];
+        break;
+      }
+    }
+    document.getElementById("glass-tag").textContent = "BEST · " + discountRate(best) + "% OFF";
+    document.getElementById("glass-name").textContent = best.name;
+    document.getElementById("glass-old").textContent = won(best.old_price);
+    document.getElementById("glass-price").textContent = won(best.price);
   }
 
   // 상품 정보로 카드 하나 만들기 (모양은 원래 카드와 같음)
@@ -1461,7 +1483,7 @@
     price.className = "price";
     var rate = document.createElement("span");
     rate.className = "rate";
-    rate.textContent = Math.round((p.old_price - p.price) / p.old_price * 100) + "%";   // 할인율 자동 계산
+    rate.textContent = discountRate(p) + "%";   // 할인율 자동 계산
     price.appendChild(rate);
     price.appendChild(document.createTextNode(won(p.price)));   // 장바구니가 이 글자에서 가격을 읽습니다
     card.appendChild(price);
